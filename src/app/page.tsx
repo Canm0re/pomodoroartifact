@@ -4,9 +4,8 @@ import React, { useState, useEffect } from 'react';
 
 const PomodoroApp = () => {
   const [cycles, setCycles] = useState(4);
-  const [cycleTime, setCycleTime] = useState(25);
+  const [focusTime, setFocusTime] = useState(25);
   const [breakTime, setBreakTime] = useState(5);
-  const [startTime, setStartTime] = useState('09:00');
   const [currentStep, setCurrentStep] = useState('setup');
   const [currentCycle, setCurrentCycle] = useState(1);
   const [timer, setTimer] = useState(0);
@@ -20,6 +19,13 @@ const PomodoroApp = () => {
     noteworthy: ''
   });
 
+  const calculateTotalTime = () => {
+    const totalMinutes = cycles * focusTime + (cycles - 1) * breakTime;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
   useEffect(() => {
     let interval = null;
     if (currentStep === 'pomodoro' && timer > 0) {
@@ -31,22 +37,25 @@ const PomodoroApp = () => {
         if (currentCycle < cycles) {
           setCurrentCycle(currentCycle + 1);
           setIsBreak(false);
-          setTimer(cycleTime * 60);
+          setTimer(focusTime * 60);
           setCurrentStep('planning');
-        } else {
-          setCurrentStep('debrief');
         }
       } else {
-        setIsBreak(true);
-        setTimer(breakTime * 60);
-        setCurrentStep('review');
+        if (currentCycle < cycles) {
+          setIsBreak(true);
+          setTimer(breakTime * 60);
+          setCurrentStep('review');
+        } else {
+          // Last cycle completed, go directly to debrief
+          setCurrentStep('debrief');
+        }
       }
     }
     return () => clearInterval(interval);
-  }, [timer, currentStep, isBreak, currentCycle, cycles, cycleTime, breakTime]);
+  }, [timer, currentStep, isBreak, currentCycle, cycles, focusTime, breakTime]);
 
   const startPomodoro = () => {
-    setTimer(cycleTime * 60);
+    setTimer(focusTime * 60);
     setCurrentStep('planning');
   };
 
@@ -57,6 +66,12 @@ const PomodoroApp = () => {
     margin: '10px 0',
     borderRadius: '4px',
     border: '1px solid #ccc',
+  };
+
+  const labelStyle = {
+    fontWeight: 'bold',
+    marginTop: '10px',
+    display: 'block',
   };
 
   const buttonStyle = {
@@ -74,67 +89,64 @@ const PomodoroApp = () => {
   const renderSetup = () => (
     <div>
       <h2>Pomodoro Setup</h2>
+      <label style={labelStyle}>How many cycles?</label>
       <input
         type="number"
         value={cycles}
         onChange={(e) => setCycles(Number(e.target.value))}
-        placeholder="Number of Pomodoro Cycles"
         style={inputStyle}
       />
+      <label style={labelStyle}>Focus time (minutes)</label>
       <input
         type="number"
-        value={cycleTime}
-        onChange={(e) => setCycleTime(Number(e.target.value))}
-        placeholder="Minutes per Cycle"
+        value={focusTime}
+        onChange={(e) => setFocusTime(Number(e.target.value))}
         style={inputStyle}
       />
+      <label style={labelStyle}>Break time (minutes)</label>
       <input
         type="number"
         value={breakTime}
         onChange={(e) => setBreakTime(Number(e.target.value))}
-        placeholder="Minutes per Break"
         style={inputStyle}
       />
-      <input
-        type="time"
-        value={startTime}
-        onChange={(e) => setStartTime(e.target.value)}
-        style={inputStyle}
-      />
+      <p style={{fontWeight: 'bold', marginTop: '20px'}}>
+        Total session time: {calculateTotalTime()}
+      </p>
       
       <h3>Session Questions</h3>
+      <label style={labelStyle}>What am I trying to accomplish?</label>
       <textarea 
-        placeholder="What am I trying to accomplish?"
         value={sessionQuestions.accomplishment}
         onChange={(e) => setSessionQuestions({...sessionQuestions, accomplishment: e.target.value})}
         style={inputStyle}
       />
+      <label style={labelStyle}>Why is this important and valuable?</label>
       <textarea 
-        placeholder="Why is this important and valuable?"
         value={sessionQuestions.importance}
         onChange={(e) => setSessionQuestions({...sessionQuestions, importance: e.target.value})}
         style={inputStyle}
       />
+      <label style={labelStyle}>How will I know this is complete?</label>
       <textarea 
-        placeholder="How will I know this is complete?"
         value={sessionQuestions.completion}
         onChange={(e) => setSessionQuestions({...sessionQuestions, completion: e.target.value})}
         style={inputStyle}
       />
+      <label style={labelStyle}>Any risks / hazards? Potential distractions, procrastination, etc.</label>
       <textarea 
-        placeholder="Any risks / hazards? Potential distractions, procrastination, etc."
         value={sessionQuestions.risks}
         onChange={(e) => setSessionQuestions({...sessionQuestions, risks: e.target.value})}
         style={inputStyle}
       />
+      <label style={labelStyle}>Is this concrete / measurable or subjective / ambiguous?</label>
       <textarea 
-        placeholder="Is this concrete / measurable or subjective / ambiguous?"
         value={sessionQuestions.measurability}
         onChange={(e) => setSessionQuestions({...sessionQuestions, measurability: e.target.value})}
         style={inputStyle}
       />
+      <label style={labelStyle}>Anything else noteworthy?</label>
       <textarea 
-        placeholder="Anything else noteworthy?"
         value={sessionQuestions.noteworthy}
         onChange={(e) => setSessionQuestions({...sessionQuestions, noteworthy: e.target.value})}
         style={inputStyle}
@@ -184,14 +196,16 @@ const PomodoroApp = () => {
       <textarea placeholder="Anything noteworthy?" style={inputStyle}></textarea>
       <textarea placeholder="Any distractions?" style={inputStyle}></textarea>
       <textarea placeholder="Things to improve for next cycle?" style={inputStyle}></textarea>
-      <button onClick={() => setCurrentStep('pomodoro')} style={buttonStyle}>Start Break</button>
+      <button onClick={() => setCurrentStep('pomodoro')} style={buttonStyle}>
+        {currentCycle < cycles ? "Start Break" : "Go to Debrief"}
+      </button>
     </div>
   );
 
   const renderDebrief = () => (
     <div>
       <h2>Debrief</h2>
-      <textarea placeholder={`What did I get done this past ${cycles * cycleTime} minutes?`} style={inputStyle}></textarea>
+      <textarea placeholder={`What did I get done this past ${calculateTotalTime()}?`} style={inputStyle}></textarea>
       <textarea placeholder="How did this compare to my normal work output?" style={inputStyle}></textarea>
       <textarea placeholder="Did I get bogged down? Where?" style={inputStyle}></textarea>
       <textarea placeholder="What went well? How can I replicate this in the future?" style={inputStyle}></textarea>
