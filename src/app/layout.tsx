@@ -20,11 +20,11 @@ export default function RootLayout({
       <footer className='flex items-center justify-center w-full h-24 border-t text-emerald-700 font-semibold'>
         <a
           className='flex items-center justify-center'
-          href='https://artifactbin.com?utm_source=template-repo&utm_campaign=oss'
+          href=''
           target='_blank'
           rel='noopener noreferrer'
         >
-          Deployed
+          
         </a>
       </footer>
     </html>
