@@ -2,6 +2,34 @@
 
 import React, { useState, useEffect } from 'react';
 
+const CollapsibleElement = ({ title, content }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div style={{ marginTop: '20px', border: '1px solid #ccc', borderRadius: '4px' }}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        style={{
+          width: '100%',
+          textAlign: 'left',
+          padding: '10px',
+          backgroundColor: '#f0f0f0',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}
+      >
+        {title} {isOpen ? '▲' : '▼'}
+      </button>
+      {isOpen && (
+        <div style={{ padding: '10px' }}>
+          {content}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const PomodoroApp = () => {
   const [cycles, setCycles] = useState(4);
   const [focusTime, setFocusTime] = useState(25);
@@ -18,6 +46,7 @@ const PomodoroApp = () => {
     measurability: '',
     noteworthy: ''
   });
+  const [cycleGoal, setCycleGoal] = useState('');
 
   const calculateTotalTime = () => {
     const totalMinutes = cycles * focusTime + (cycles - 1) * breakTime;
@@ -46,7 +75,6 @@ const PomodoroApp = () => {
           setTimer(breakTime * 60);
           setCurrentStep('review');
         } else {
-          // Last cycle completed, go directly to debrief
           setCurrentStep('debrief');
         }
       }
@@ -159,7 +187,12 @@ const PomodoroApp = () => {
   const renderPlanning = () => (
     <div>
       <h2>Plan for Cycle {currentCycle}</h2>
-      <textarea placeholder="What am I trying to accomplish this cycle?" style={inputStyle}></textarea>
+      <textarea 
+        placeholder="What am I trying to accomplish this cycle?" 
+        style={inputStyle}
+        value={cycleGoal}
+        onChange={(e) => setCycleGoal(e.target.value)}
+      ></textarea>
       <textarea placeholder="How will I get started?" style={inputStyle}></textarea>
       <textarea placeholder="Any hazards present?" style={inputStyle}></textarea>
       <select style={inputStyle}>
@@ -182,6 +215,12 @@ const PomodoroApp = () => {
       <div style={{ fontSize: '2em', margin: '20px 0' }}>
         {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
       </div>
+      {!isBreak && (
+        <CollapsibleElement 
+          title="View Cycle Goal" 
+          content={cycleGoal || "No goal set for this cycle."}
+        />
+      )}
     </div>
   );
 
